@@ -29,8 +29,7 @@ This Terraform configuration deploys two frontend applications (emarket and ncdf
 ## Directory Structure
 
 ```
-multifro
-ntend-deployment/
+multifrontend-deployment/
 ├── main.tf                      # Root module - defines emarket, ncdf, and cloudfront modules
 ├── variables.tf                 # Root-level variables (account, region, environment, etc.)
 ├── versions.tf                  # Provider versions
