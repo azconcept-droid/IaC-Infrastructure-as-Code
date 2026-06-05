@@ -1,0 +1,61 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# Environment variables & secrets
+*.tfvars
+*.tfvars.json
+.env
+.env.*
+!.env.example
+
+# IDE & Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+.windows
+.directory
+
+# Logs
+*.log
+*.logs
+
+# Plan files (optional - include if you want to exclude plan outputs)
+# *.tfplan
+# *.plan
+
+# Environment variables
+*.tfvars
+*.tfvars.json
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local state
+.terraform.lock.hcl
