@@ -106,50 +106,7 @@ resource "aws_secretsmanager_secret" "build_env" {
 }
 
 # ------------------------
-# GITHUB OIDC + ROLE (UNCHANGED)
-# ------------------------
-
-resource "aws_iam_openid_connect_provider" "github" {
-  count = var.create_github_oidc_provider ? 1 : 0
-
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [var.github_oidc_thumbprint]
-}
-
-locals {
-  github_oidc_provider_arn = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : var.github_oidc_provider_arn
-}
-
-data "aws_iam_policy_document" "github_assume_role" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-
-    principals {
-      type        = "Federated"
-      identifiers = [local.github_oidc_provider_arn]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:aud"
-      values   = ["sts.amazonaws.com"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:sub"
-      values   = local.github_environment_subjects
-    }
-  }
-}
-
-resource "aws_iam_role" "github_deploy" {
-  name               = "${var.project_name}-${var.environment}-github-deploy"
-  assume_role_policy = data.aws_iam_policy_document.github_assume_role.json
-}
-
+# GitHub Deployment Policy
 data "aws_iam_policy_document" "github_deploy" {
   statement {
     actions   = ["secretsmanager:GetSecretValue"]
@@ -173,10 +130,16 @@ data "aws_iam_policy_document" "github_deploy" {
 }
 
 resource "aws_iam_policy" "github_deploy" {
-  policy = data.aws_iam_policy_document.github_deploy.json
+  name_prefix = "${var.project_name}-${var.environment}-deploy-"
+  policy      = data.aws_iam_policy_document.github_deploy.json
+
+  tags = {
+    Project     = var.project_name
+    Environment = var.environment
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "github_deploy" {
-  role       = aws_iam_role.github_deploy.name
+  role       = split("/", var.github_deploy_role_arn)[1]
   policy_arn = aws_iam_policy.github_deploy.arn
 }

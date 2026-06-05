@@ -49,22 +49,11 @@ variable "secret_id" {
   type        = string
 }
 
-variable "create_github_oidc_provider" {
-  description = "Create the GitHub Actions OIDC provider. Set false if the AWS account already has one."
-  type        = bool
-}
-
-variable "github_oidc_provider_arn" {
-  description = "Existing GitHub Actions OIDC provider ARN when create_github_oidc_provider is false."
+variable "github_deploy_role_arn" {
+  description = "ARN of the shared GitHub deployment IAM role."
   type        = string
 }
 
-variable "github_oidc_thumbprint" {
-  description = "GitHub Actions OIDC root CA thumbprint."
-  type        = string
-}
-
-# Module-specific variable
 variable "cloudfront_distribution_arn" {
   description = "CloudFront shared distribution ARN."
   type        = string
