@@ -5,7 +5,7 @@ module "cloudfront" {
 
   sites = {
     "emarket.com" = module.emarket.bucket_domain
-    "ncdf.com" = module.ncdf.bucket_domain
+    "ncdf.com"    = module.ncdf.bucket_domain
   }
 }
 
@@ -96,3 +96,4 @@ module "ncdf" {
   github_deploy_role_arn      = aws_iam_role.github_deploy.arn
   cloudfront_distribution_arn = module.cloudfront.distribution_arn
 }
+

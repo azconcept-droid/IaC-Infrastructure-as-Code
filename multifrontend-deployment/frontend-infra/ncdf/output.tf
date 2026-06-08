@@ -5,3 +5,11 @@ output "bucket_domain" {
 output "bucket_name" {
   value = aws_s3_bucket.site.bucket
 }
+
+output "secret_name" {
+  value = aws_secretsmanager_secret.build_env.name
+}
+
+output "secret_id" {
+  value = var.secret_id
+}
