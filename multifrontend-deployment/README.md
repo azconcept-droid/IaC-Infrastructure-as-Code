@@ -347,6 +347,51 @@ terraform plan -target=module.emarket
 terraform apply -target=module.emarket
 ```
 
+Your `sites` configuration is **correct for testing purposes**. Here's what you need to know:
+
+## How It Works
+
+The CloudFront module uses a **CloudFront Function** that routes requests to different S3 buckets based on the `Host` header:
+- `Host: emarket.com` → routes to emarket's S3 bucket
+- `Host: ncdf.com` → routes to ncdf's S3 bucket
+
+## Why It's OK That Domains Don't Exist
+
+The domain names ("emarket.com", "ncdf.com") are just **identifiers** used by the CloudFront Function to route traffic. They don't need to be real registered domains because:
+
+1. Your configuration uses `cloudfront_default_certificate = true` (no custom SSL certificate required)
+2. The routing happens at the CloudFront edge based on the Host header value
+
+## How to Test Your Two Frontend Deployments
+
+Since you're using CloudFront's default certificate, you'll access via the CloudFront URL. Here's how to test both sites:
+
+```bash
+# Get the CloudFront distribution URL
+CLOUDFRONT_URL=$(terraform output -raw cloudfront_domain)
+
+# Test emarket frontend
+curl -H "Host: emarket.com" https://$CLOUDFRONT_URL
+
+# Test ncdf frontend
+curl -H "Host: ncdf.com" https://$CLOUDFRONT_URL
+```
+
+## Alternative Testing Methods
+
+1. **Browser testing**: Use browser dev tools to modify the Host header, or use a browser extension
+2. **Local hosts file**: Add `127.0.0.1 emarket.com ncdf.com` to `/etc/hosts` and use a tool like `curl` with `--resolve`
+3. **Postman/Insomnia**: Set custom Host header in request headers
+
+## For Production
+
+When you're ready for production, you would:
+1. Use real domains (or subdomains)
+2. Create ACM certificates for those domains
+3. Update the `viewer_certificate` block to use your ACM certificate instead of the default
+
+Your current setup is perfectly valid for testing the multi-frontend architecture with a single CloudFront distribution!
+
 ## Troubleshooting
 
 ### OIDC Provider Duplication Error
