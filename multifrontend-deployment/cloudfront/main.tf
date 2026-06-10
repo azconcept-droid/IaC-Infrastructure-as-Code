@@ -24,26 +24,183 @@ resource "aws_cloudfront_function" "router" {
   runtime = "cloudfront-js-1.0"
   publish = true
 
-  code = <<EOF
-function handler(event) {
-    var request = event.request;
-    var host = request.headers.host.value;
+  code = templatefile("${path.module}/cloudfront-function.js", {
+    sites      = var.sites
+    aws_region = var.aws_region
+  })
 
-    %{~ for domain, bucket in var.sites ~}
-    if (host === "${domain}" || host === "www.${domain}") {
-        request.origin = {
-            s3: {
-                domainName: "${bucket}",
-                region: "${var.aws_region}",
-                authMethod: "sigv4"
-            }
-        };
-    }
-    %{~ endfor ~}
-
-    return request;
+  lifecycle {
+    create_before_destroy = true
+  }
 }
-EOF
+
+# WAF Web ACL for CloudFront
+resource "aws_wafv2_web_acl" "this" {
+  count       = var.enable_waf ? 1 : 0
+  name        = var.waf_name
+  description = var.waf_description
+  scope       = "CLOUDFRONT"
+
+  default_action {
+    allow {}
+  }
+
+  # Block specific HTTP methods
+  dynamic "rule" {
+    for_each = length(var.block_http_methods) > 0 ? [1] : []
+    content {
+      name     = "BlockHttpMethods"
+      priority = 0
+
+      statement {
+        or_statement {
+          dynamic "statement" {
+            for_each = var.block_http_methods
+            content {
+              byte_match_statement {
+                positional_constraint = "EXACTLY"
+                search_string         = statement.value
+                field_to_match {
+                  method {}
+                }
+                text_transformation {
+                  priority = 0
+                  type     = "NONE"
+                }
+              }
+            }
+          }
+        }
+      }
+
+      action {
+        block {}
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name               = "BlockHttpMethods"
+        sampled_requests_enabled  = true
+      }
+    }
+  }
+
+  # Rate limiting rule
+  dynamic "rule" {
+    for_each = var.enable_rate_limiting ? [1] : []
+    content {
+      name     = "RateLimitRule"
+      priority = 1
+
+      statement {
+        rate_based_statement {
+          limit              = var.rate_limit_threshold
+          aggregate_key_type = "IP"
+        }
+      }
+
+      action {
+        block {}
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name               = "RateLimitRule"
+        sampled_requests_enabled  = true
+      }
+    }
+  }
+
+  # AWS Managed Rules - Common Rule Set
+  dynamic "rule" {
+    for_each = var.enable_common_rule_group ? [1] : []
+    content {
+      name     = "AWSManagedRulesCommonRuleSet"
+      priority = 2
+
+      override_action {
+        none {}
+      }
+
+      statement {
+        managed_rule_group_statement {
+          name        = "AWSManagedRulesCommonRuleSet"
+          vendor_name = "AWS"
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name               = "AWSManagedRulesCommonRuleSet"
+        sampled_requests_enabled  = true
+      }
+    }
+  }
+
+  # AWS Managed Rules - Known Bad Inputs
+  dynamic "rule" {
+    for_each = var.enable_known_bad_inputs_rule_group ? [1] : []
+    content {
+      name     = "AWSManagedRulesKnownBadInputsRuleSet"
+      priority = 3
+
+      override_action {
+        none {}
+      }
+
+      statement {
+        managed_rule_group_statement {
+          name        = "AWSManagedRulesKnownBadInputsRuleSet"
+          vendor_name = "AWS"
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name               = "AWSManagedRulesKnownBadInputsRuleSet"
+        sampled_requests_enabled  = true
+      }
+    }
+  }
+
+  # AWS Managed Rules - SQL Injection
+  dynamic "rule" {
+    for_each = var.enable_sql_injection_rule_group ? [1] : []
+    content {
+      name     = "AWSManagedRulesSQLiRuleSet"
+      priority = 4
+
+      override_action {
+        none {}
+      }
+
+      statement {
+        managed_rule_group_statement {
+          name        = "AWSManagedRulesSQLiRuleSet"
+          vendor_name = "AWS"
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name               = "AWSManagedRulesSQLiRuleSet"
+        sampled_requests_enabled  = true
+      }
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name               = var.waf_name
+    sampled_requests_enabled  = true
+  }
+
+  tags = merge(
+    {
+      Name = var.waf_name
+    },
+    var.waf_tags
+  )
 }
 
 resource "aws_cloudfront_distribution" "this" {
@@ -76,10 +233,8 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
-  # viewer_certificate {
-  #   acm_certificate_arn = var.acm_certificate_arn
-  #   ssl_support_method  = "sni-only"
-  # }
+  # Attach WAF if enabled
+  web_acl_id = var.enable_waf ? aws_wafv2_web_acl.this[0].arn : ""
 
   viewer_certificate {
     cloudfront_default_certificate = true

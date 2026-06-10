@@ -7,6 +7,8 @@ module "cloudfront" {
     "emarket.com" = module.emarket.bucket_domain
     "ncdf.com"    = module.ncdf.bucket_domain
   }
+
+  enable_waf = var.enable_waf
 }
 
 # Shared GitHub OIDC Provider and IAM Role

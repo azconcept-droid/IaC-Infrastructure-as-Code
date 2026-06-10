@@ -107,6 +107,12 @@ variable "github_oidc_provider_arn" {
   default     = null
 }
 
+variable "enable_waf" {
+  description = "Enable AWS WAF for CloudFront distribution"
+  type        = bool
+  default     = false
+}
+
 variable "github_oidc_thumbprint" {
   description = "GitHub Actions OIDC root CA thumbprint."
   type        = string

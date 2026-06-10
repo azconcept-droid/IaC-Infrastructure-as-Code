@@ -363,6 +363,54 @@ jobs:
 - CloudFront invalidation permissions
 
 
+## Testing WAF
+
+After applying with `enable_waf = true`, test each rule against your CloudFront URL:
+
+```bash
+CF_URL=$(terraform output -raw cloudfront_domain)
+```
+
+### SQL Injection (should return 403 Forbidden)
+```bash
+curl -H "Host: emarket.com" "https://$CF_URL/?q=1'+OR+%271%27%3D%271"
+curl -H "Host: emarket.com" "https://$CF_URL/?q=UNION+SELECT+*+FROM+users"
+```
+
+### XSS / Common Rule Set (should return 403)
+```bash
+curl -H "Host: emarket.com" "https://$CF_URL/?q=%3Cscript%3Ealert(1)%3C/script%3E"
+```
+
+### Known Bad Inputs / Path Traversal (should return 403)
+```bash
+curl -H "Host: emarket.com" "https://$CF_URL/../../../etc/passwd"
+```
+
+### Rate Limiting (block after ~2000 requests in 5 min)
+```bash
+for i in $(seq 1 2500); do
+  curl -s -o /dev/null -w "%{http_code}\n" \
+    -H "Host: emarket.com" "https://$CF_URL/"
+done | sort | uniq -c
+```
+
+### Monitor via CloudWatch
+```bash
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/WAFV2 \
+  --metric-name BlockedRequests \
+  --dimensions Name=WebACL,Value=frontend-waf Name=Rule,Value=ALL Name=Region,Value=global \
+  --start-time $(date -u -d '-1 hour' +%Y-%m-%dT%H:%M:%SZ) \
+  --end-time $(date -u +%Y-%m-%dT%H:%M:%SZ) \
+  --period 300 --statistics Sum
+```
+
+### Check WAF config via AWS CLI
+```bash
+aws wafv2 list-web-acls --scope CLOUDFRONT
+```
+
 ## Common Tasks
 
 ### View Current State
