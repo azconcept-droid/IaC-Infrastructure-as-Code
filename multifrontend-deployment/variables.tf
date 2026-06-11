@@ -1,7 +1,6 @@
 variable "aws_account_id" {
   description = "AWS account ID"
   type        = string
-  default     = "956536811090"
 }
 
 variable "aws_region" {
@@ -110,7 +109,6 @@ variable "github_oidc_provider_arn" {
 variable "enable_waf" {
   description = "Enable AWS WAF for CloudFront distribution"
   type        = bool
-  default     = false
 }
 
 variable "github_oidc_thumbprint" {
