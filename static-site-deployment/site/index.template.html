@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="build-id" content="__BUILD_ID__" />
+    <title>Static Site Cache Test</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="card">
+      <p class="eyebrow">CloudFront + S3 cache timing test</p>
+      <h1>Static site is live</h1>
+      <p class="build">
+        Build ID: <code id="build-id">__BUILD_ID__</code>
+      </p>
+      <p class="hint">
+        This value changes on every deployment. Use the button below to ask
+        CloudFront which build it is currently serving to this browser.
+      </p>
+      <button id="check" type="button">Check edge build</button>
+      <pre id="output" aria-live="polite">No request made yet.</pre>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

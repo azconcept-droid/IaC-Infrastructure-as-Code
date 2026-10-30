@@ -1,0 +1,28 @@
+aws_account_id = "***************"
+aws_region     = "eu-west-1"
+environment    = "testing"
+
+github_org  = "*******************"
+github_repo = "static-site"
+
+project_name = "static-site"
+site_domain  = "static-site.example.com"
+
+# For a pure CloudFront cache timing test, keep WAF disabled.
+enable_waf = false
+
+# If the account already has the GitHub OIDC provider (for example, because
+# multifrontend-deployment created it), keep create_github_oidc_provider false
+# and provide the existing ARN. If this is the first stack, set it to true.
+create_github_oidc_provider = true
+# github_oidc_provider_arn    = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+
+# Optional custom bucket name. Leave null to use
+# project-environment-account-region.
+# bucket_name = "my-static-site-bucket"
+
+# CloudFront cache TTLs. Keep min_ttl = 0 so origin Cache-Control headers
+# (max-age=30, no-cache, etc.) are respected during the experiment.
+min_ttl     = 0
+default_ttl = 86400
+max_ttl     = 31536000

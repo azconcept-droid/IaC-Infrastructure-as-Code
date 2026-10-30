@@ -1,0 +1,39 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# Environment variables & secrets
+*.tfvars
+*.tfvars.json
+.env
+.env.*
+!.env.example
+
+# Build artifacts from deploy/measurement scripts
+.build/
+results/
+terraform.tfvars
+commit-msg.md
+
+# IDE & Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+*.logs
